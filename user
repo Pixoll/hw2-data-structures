@@ -23,14 +23,14 @@ string timestamp_to_string(time_t timestamp) {
  */
 class User {
   private:
-    static const int max_username_len = 16;
-    static const int max_universities = 11;
+    static const int MAX_USERNAME_LEN = 16;
+    static const int MAX_UNIVERSITIES = 11;
 
   public:
     /** The id */
     uint64 id;
     /** The username */
-    char username[max_username_len];
+    char username[MAX_USERNAME_LEN];
     /** Tweets count */
     uint32 tweets;
     /** Friends count */
@@ -43,15 +43,15 @@ class User {
      */
     time_t created_at;
     /** Usernames of the universities the user follows */
-    char universities[max_universities][max_username_len];
+    char universities[MAX_UNIVERSITIES][MAX_USERNAME_LEN];
 
     /** Constructor that takes most of the key information */
     User(uint64 id, const char *username, uint32 tweets, uint32 friends, uint32 followers, time_t created_at)
         : id(id), tweets(tweets), friends(friends), followers(followers), created_at(created_at) {
-        strncpy(this->username, username, max_username_len);
-        this->username[max_username_len - 1] = 0;
+        strncpy(this->username, username, MAX_USERNAME_LEN);
+        this->username[MAX_USERNAME_LEN - 1] = 0;
 
-        for (int i = 0; i < max_universities; i++)
+        for (int i = 0; i < MAX_UNIVERSITIES; i++)
             this->universities[i][0] = 0;
     }
 
@@ -70,13 +70,13 @@ class User {
      * Does nothing if the university was already included (possible data duplication)
      */
     void add_university(const char *university) {
-        for (int i = 0; i < max_universities; i++) {
-            if (strncmp(this->universities[i], university, max_username_len) == 0)
+        for (int i = 0; i < MAX_UNIVERSITIES; i++) {
+            if (strncmp(this->universities[i], university, MAX_USERNAME_LEN) == 0)
                 return;
 
             if (this->universities[i][0] == 0) {
-                strncpy(this->universities[i], university, max_username_len);
-                this->universities[i][max_username_len - 1] = 0;
+                strncpy(this->universities[i], university, MAX_USERNAME_LEN);
+                this->universities[i][MAX_USERNAME_LEN - 1] = 0;
                 return;
             }
         }
@@ -94,7 +94,7 @@ class User {
         oss << timestamp_to_string(this->created_at) << "\t";
         oss << this->universities[0];
 
-        for (int i = 1; i < max_universities; i++) {
+        for (int i = 1; i < MAX_UNIVERSITIES; i++) {
             if (this->universities[i][0] == 0)
                 break;
 
