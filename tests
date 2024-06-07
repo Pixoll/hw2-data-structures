@@ -50,8 +50,10 @@ void run_tests(
     char time_string[20];
     strftime(time_string, 20, "%F %T", localtime(&now));
 
-    cout << time_string << "\n"
-         << "running " << tests << "x " << file_name_prefix << " tests..." << endl;
+    cout << "\n==========================================================\n\n"
+         << time_string << "\n"
+         << "running " << tests << "x " << file_name_prefix << " tests...\n"
+         << endl;
 
     const int users_size    = users.size();
     const int ranges_amount = ceilf((float)users_size / TIMING_MEASURE_RANGE);
@@ -63,10 +65,11 @@ void run_tests(
     dh_hash_map<K, const User *> dh_map(L_N, l_hash_fn, dh_hash_fn);
     unordered_map<K, const User *, function<int(K)>> stl_map(SC_N, sc_hash_fn);
 
-    stringstream timings;
+    stringstream timings, results;
     timings << "users,op,map,time\n";
 
-    measurement t_put, t_get, t_remove, sizes;
+    measurement t_put, t_get, t_remove;
+    double stl_load_factor = 0;
     performance p, total;
     total.start();
 
@@ -113,14 +116,13 @@ void run_tests(
         }
 
         if (n_test == 0) {
-            // Record sizes to print load factors at the end
-            sizes = {
-                sc_map.size(),
-                lp_map.size(),
-                qp_map.size(),
-                dh_map.size(),
-                stl_map.size(),
-            };
+            // Record maps information to print at the end
+            stl_load_factor = stl_map.load_factor();
+
+            sc_map.info(results);
+            lp_map.info(results);
+            qp_map.info(results);
+            dh_map.info(results);
         }
 
         start_range = 0;
@@ -261,11 +263,6 @@ void run_tests(
     timings.clear();
 
     cout << "saved\n\n"
-         << "load factors:\n"
-         << "sc:  " << (double)sizes.sc / SC_N << "\n"
-         << "lp:  " << (double)sizes.lp / L_N << "\n"
-         << "qp:  " << (double)sizes.qp / L_N << "\n"
-         << "dh:  " << (double)sizes.dh / L_N << "\n"
-         << "stl: " << (double)sizes.stl / SC_N << "\n"
-         << endl;
+         << results.rdbuf() //
+         << "stl load factor: " << stl_load_factor << endl;
 }

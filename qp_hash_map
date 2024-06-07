@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <sstream>
+#include <type_traits>
 #include <vector>
 
 using namespace std;
@@ -214,18 +216,18 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
         return result;
     }
 
-    /** Print all the data contained in the map, alongside extra information */
-    void print() {
-        cout << "max size: " << this->max_size << "\n"
-             << "filled: " << (float)this->current_size / this->max_size * 100 << "%" << "\n\n";
-
-        for (hash_node *node : this->table) {
-            if (node == nullptr)
-                cout << "<empty>" << "\n";
-            else
-                cout << node->key << "\n";
-        }
-
-        cout << endl;
+    /** Print information about the hash map */
+    void info(stringstream &out) {
+        out << "[qp] map info:\n"
+            << "max size: " << this->max_size << "\n"
+            << "size: " << this->current_size << "\n"
+            << "load factor: " << (double)this->current_size / this->max_size << "\n"
+            << "size in memory: "
+            << sizeof(*this)
+                   + this->current_size
+                         * (sizeof(hash_node *) + sizeof(hash_node) + sizeof(K) + sizeof(V)
+                            + (is_pointer<V>::value ? sizeof(*(V){nullptr}) : 0))
+            << " B\n"
+            << endl;
     }
 };
