@@ -1,3 +1,4 @@
+#include "performance.h"
 #include "read_csv.h"
 #include "tests.h"
 #include "user.h"
@@ -26,7 +27,7 @@ using namespace std;
 // -- All hash functions to be tested -- //
 
 template <int mod> int mod_hash(uint64 id) {
-    return id % mod;
+    return mod - (id % mod);
 }
 
 template <int mod> int folding_hash(uint64 id) {
@@ -53,7 +54,7 @@ template <int mod> int folding_hash(uint64 id) {
         hashed += atoi(chunk);
     }
 
-    return hashed % mod;
+    return mod - (hashed % mod);
 }
 
 template <int size> int username_hash(const string &username) {
@@ -62,7 +63,7 @@ template <int size> int username_hash(const string &username) {
     for (const char c : username)
         hash_val = 31 * hash_val + c;
 
-    return hash_val % size;
+    return size - (hash_val % size);
 }
 
 template <int size> int username_double_hash(const string &username) {
@@ -71,7 +72,7 @@ template <int size> int username_double_hash(const string &username) {
     for (const char c : username)
         h = (127 * h + c) % size;
 
-    return h;
+    return size - h;
 }
 
 template <int size> int username_hash_2(const string &username) {
@@ -87,7 +88,7 @@ template <int size> int username_hash_2(const string &username) {
     hash ^= hash >> 11;
     hash += hash << 15;
 
-    return hash % size;
+    return size - (hash % size);
 }
 
 int main(const int argc, const char *argv[]) {
