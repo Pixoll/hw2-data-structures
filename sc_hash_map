@@ -54,7 +54,7 @@ template <typename K, typename V, uint32 N> class sc_hash_map : virtual public m
             exit(1);
         }
 
-        for (int i = 0; i < N; i++) {
+        for (uint32 i = 0; i < N; i++) {
             this->table[i] = nullptr;
         }
     }
@@ -158,7 +158,7 @@ template <typename K, typename V, uint32 N> class sc_hash_map : virtual public m
 
     /** Clear the map - frees allocated memory */
     void clear() {
-        for (int i = 0; i < N; i++) {
+        for (uint32 i = 0; i < N; i++) {
             hash_node *node = this->table[i];
             if (node == nullptr)
                 continue;

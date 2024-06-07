@@ -42,7 +42,7 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
         }
 
         /** We use nullptr to mark a node as empty */
-        for (int i = 0; i < N; i++) {
+        for (uint32 i = 0; i < N; i++) {
             this->table[i] = nullptr;
         }
     }
@@ -54,8 +54,8 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Get the value paired with the key */
     V get(K key) {
-        int index   = this->hash_fn(key);
-        int counter = 0;
+        int index      = this->hash_fn(key);
+        uint32 counter = 0;
 
         hash_node *node = this->table[index];
 
@@ -102,8 +102,8 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Remove a key-value pair by it's key */
     V remove(K key) {
-        int index   = this->hash_fn(key);
-        int counter = 0;
+        int index      = this->hash_fn(key);
+        uint32 counter = 0;
 
         hash_node *node = this->table[index];
 
@@ -140,7 +140,7 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Clear the map - frees allocated memory */
     void clear() {
-        for (int i = 0; i < N; i++) {
+        for (uint32 i = 0; i < N; i++) {
             hash_node *node = this->table[i];
             if (node == nullptr)
                 continue;
