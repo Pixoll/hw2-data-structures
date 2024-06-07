@@ -109,6 +109,9 @@ int main(const int argc, const char *argv[]) {
 
     // Run all the tests
 
+    performance t;
+    t.start();
+
     run_tests<uint64, SC_N, L_N>(
         "id_mod",
         tests,
@@ -158,6 +161,9 @@ int main(const int argc, const char *argv[]) {
         username_seeded_hash<L_N>,
         username_default_hash<DH_N>
     );
+
+    cout << "\n==========================================================\n\n"
+         << "total time: " << t.end<performance::milliseconds>() / 1e3 << " s" << endl;
 
     return 0;
 }
