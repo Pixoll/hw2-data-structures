@@ -41,8 +41,7 @@ template <typename K> void stl_map_info(stringstream &out, unordered_map<K, cons
         << (uint64)(sizeof(map)
                     + map.size()
                           * (sizeof(list<pair<const K, const User *>>) + sizeof(pair<const K, const User *>) + sizeof(User)))
-        << " B\n"
-        << endl;
+        << " B";
 }
 
 /**
