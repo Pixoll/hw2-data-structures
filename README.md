@@ -11,7 +11,7 @@ pip install pandas matplotlib
 ### Compiling
 
 ```
-g++ -g main.cpp -O3 -o main.exe
+g++ -std=c++17 -g main.cpp -O3 -o main.exe
 ```
 
 ### Executing
