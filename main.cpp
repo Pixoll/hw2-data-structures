@@ -101,6 +101,10 @@ int main(const int argc, const char *argv[]) {
 
     const vector<const User *> users = read_csv("universities_followers.csv");
 
+    if (filesystem::exists("data")) {
+        filesystem::remove_all("data");
+    }
+
     filesystem::create_directory("data");
 
     // Run all the tests
