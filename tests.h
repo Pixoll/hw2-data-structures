@@ -72,18 +72,38 @@ void run_tests(
     const int users_size    = users.size();
     const int ranges_amount = ceilf((float)users_size / TIMING_MEASURE_RANGE);
 
+    performance p, total;
+
     // Prepare the test
+    p.start();
     sc_hash_map<K, const User *> sc_map(SC_N, sc_hash_fn);
+    int t_c = p.end();
+    cout << "[sc] creation: " << t_c / 1e3 << " μs\n";
+
+    p.start();
     lp_hash_map<K, const User *> lp_map(L_N, l_hash_fn);
+    t_c = p.end();
+    cout << "[lp] creation: " << t_c / 1e3 << " μs\n";
+
+    p.start();
     qp_hash_map<K, const User *> qp_map(L_N, l_hash_fn);
+    t_c = p.end();
+    cout << "[qb] creation: " << t_c / 1e3 << " μs\n";
+
+    p.start();
     dh_hash_map<K, const User *> dh_map(L_N, l_hash_fn, dh_hash_fn);
+    t_c = p.end();
+    cout << "[dh] creation: " << t_c / 1e3 << " μs\n";
+
+    p.start();
     unordered_map<K, const User *, function<int(K)>> stl_map(SC_N, sc_hash_fn);
+    t_c = p.end();
+    cout << "[stl] creation: " << t_c / 1e3 << " μs\n";
 
     stringstream timings, results;
     timings << "users,op,map,time\n";
 
     measurement times;
-    performance p, total;
     total.start();
 
     // Run N tests
