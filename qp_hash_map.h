@@ -65,7 +65,7 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
         hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
-        while (counter <= this->max_size && node != nullptr && node->key != key) {
+        while (counter <= this->max_size && (node != nullptr ? node->key != key : true)) {
             counter++;
             const int new_index = (index + (counter * counter)) % this->max_size;
             node                = this->table[new_index];
