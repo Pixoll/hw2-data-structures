@@ -70,7 +70,7 @@ template <typename K, typename V> class sc_hash_map : virtual public map_adt<K, 
 
     /** Get the value paired with the key */
     V get(K key) {
-        const int index = this->hash_fn(key);
+        const int index = this->hash_fn(key) % this->max_size;
 
         hash_node *node = this->table[index];
 
@@ -89,7 +89,7 @@ template <typename K, typename V> class sc_hash_map : virtual public map_adt<K, 
             this->rehash(this->current_size * 2);
         }
 
-        const int index = this->hash_fn(key);
+        const int index = this->hash_fn(key) % this->max_size;
 
         hash_node *destination = this->table[index];
 
@@ -124,7 +124,7 @@ template <typename K, typename V> class sc_hash_map : virtual public map_adt<K, 
 
     /** Remove a key-value pair by it's key */
     V remove(K key) {
-        const int index = this->hash_fn(key);
+        const int index = this->hash_fn(key) % this->max_size;
 
         hash_node *node     = this->table[index];
         hash_node *previous = nullptr;

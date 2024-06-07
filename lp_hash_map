@@ -57,7 +57,7 @@ template <typename K, typename V> class lp_hash_map : virtual public map_adt<K, 
 
     /** Get the value paired with the key */
     V get(K key) {
-        int index      = this->hash_fn(key);
+        int index      = this->hash_fn(key) % this->max_size;
         uint32 counter = 0;
 
         hash_node *node = this->table[index];
@@ -79,7 +79,7 @@ template <typename K, typename V> class lp_hash_map : virtual public map_adt<K, 
             this->rehash(this->current_size * 2);
         }
 
-        int index = this->hash_fn(key);
+        int index = this->hash_fn(key) % this->max_size;
 
         hash_node *node = this->table[index];
 
@@ -105,7 +105,7 @@ template <typename K, typename V> class lp_hash_map : virtual public map_adt<K, 
 
     /** Remove a key-value pair by it's key */
     V remove(K key) {
-        int index      = this->hash_fn(key);
+        int index      = this->hash_fn(key) % this->max_size;
         uint32 counter = 0;
 
         hash_node *node = this->table[index];
