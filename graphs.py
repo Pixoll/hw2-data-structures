@@ -44,6 +44,8 @@ def main() -> None:
             plt.savefig(GRAPHS_DIR + dataset + "_" + subset + "_bar.png", dpi=300)
             plt.close()
 
+            print("saved", dataset, subset, "graphs")
+
 
 if __name__ == "__main__":
     main()
