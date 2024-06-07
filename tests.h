@@ -1,11 +1,11 @@
 #pragma once
 
-#include "dh_hash_map"
-#include "lp_hash_map"
-#include "performance"
-#include "qp_hash_map"
-#include "sc_hash_map"
-#include "user"
+#include "dh_hash_map.h"
+#include "lp_hash_map.h"
+#include "performance.h"
+#include "qp_hash_map.h"
+#include "sc_hash_map.h"
+#include "user.h"
 
 #include <cmath>
 #include <ctime>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map_adt"
+#include "map_adt.h"
 
 #include <cstdlib>
 #include <functional>
@@ -12,9 +12,9 @@
 using namespace std;
 
 /**
- * Quadratic Probing Hash Map
+ * Double Hashing Hash Map
  */
-template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, V> {
+template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, V> {
   private:
     /**
      * key-value pair node
@@ -38,37 +38,40 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
     vector<hash_node *> table;
     /** Current size of the table */
     uint32 current_size = 0;
-    /** Hash function to calculate the initial index to insert the value at */
-    function<int(K)> hash_fn;
+    /** First hash function to calculate the initial index to insert the value at */
+    function<int(K)> hash_fn1;
+    /** Second hash function to calculate the step by which we insert the value at */
+    function<int(K)> hash_fn2;
 
   public:
-    /** Constructor that takes the hash function as a parameter */
-    qp_hash_map(uint32 initial_size, function<int(K)> hash_fn)
+    /** Constructor that takes both hash functions as parameters */
+    dh_hash_map(uint32 initial_size, function<int(K)> hash_fn1, function<int(K)> hash_fn2)
         : max_size(initial_size), size_threshold(initial_size * LOAD_FACTOR_THRESHOLD), table(initial_size, nullptr),
-          hash_fn(hash_fn) {
-        if (hash_fn == nullptr) {
-            cerr << "hash_fn cannot be null." << endl;
+          hash_fn1(hash_fn1), hash_fn2(hash_fn2) {
+        if (hash_fn1 == nullptr || hash_fn2 == nullptr) {
+            cerr << "hash_fns cannot be null." << endl;
             exit(1);
         }
     }
 
     /** Deconstructor, frees allocated memory */
-    ~qp_hash_map() {
+    ~dh_hash_map() {
         this->clear();
     }
 
     /** Get the value paired with the key */
     V get(K key) {
-        const int index = this->hash_fn(key) % this->max_size;
-        uint32 counter  = 0;
+        int index      = this->hash_fn1(key) % this->max_size;
+        const int step = this->hash_fn2(key);
+        uint32 counter = 0;
 
         hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
         while (counter <= this->max_size && node != nullptr && node->key != key) {
             counter++;
-            const int new_index = (index + (counter * counter)) % this->max_size;
-            node                = this->table[new_index];
+            index = (index + step) % this->max_size;
+            node  = this->table[index];
         }
 
         return node != nullptr ? node->value : nullptr;
@@ -77,50 +80,48 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
     /** Insert a key-value pair */
     V put(K key, V value) {
         if (this->current_size >= this->size_threshold) {
-            cout << "[qp] passed load factor threshold, rehashing" << endl;
+            cout << "[dh] passed load factor threshold, rehashing" << endl;
             this->rehash(this->current_size * 2);
         }
 
-        const int hash_index = this->hash_fn(key) % this->max_size;
-        int insert_index     = hash_index;
-        int counter          = 0;
+        int index      = this->hash_fn1(key) % this->max_size;
+        const int step = this->hash_fn2(key);
 
-        hash_node *node = this->table[hash_index];
+        hash_node *cursor_node = this->table[index];
 
         // Stop once we find an empty node or a match
-        while (node != nullptr && node->key != key) {
-            counter++;
-            insert_index = (hash_index + (counter * counter)) % this->max_size;
-            node         = this->table[insert_index];
+        while (cursor_node != nullptr && cursor_node->key != key) {
+            index       = (index + step) % this->max_size;
+            cursor_node = this->table[index];
         }
 
         // Found empty node
-        if (node == nullptr) {
-            this->table[insert_index] = new hash_node(key, value);
+        if (cursor_node == nullptr) {
+            this->table[index] = new hash_node(key, value);
             this->current_size++;
             return nullptr;
         }
 
         // Match -> override value
-        V previous_value = node->value;
-        node->value      = value;
+        V previous_value   = cursor_node->value;
+        cursor_node->value = value;
 
         return previous_value;
     }
 
     /** Remove a key-value pair by it's key */
     V remove(K key) {
-        const int hash_index = this->hash_fn(key) % this->max_size;
-        int value_index      = hash_index;
-        uint32 counter       = 0;
+        int index      = this->hash_fn1(key) % this->max_size;
+        const int step = this->hash_fn2(key);
+        uint32 counter = 0;
 
-        hash_node *node = this->table[hash_index];
+        hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
         while (counter <= this->max_size && (node != nullptr ? node->key != key : true)) {
             counter++;
-            value_index = (hash_index + (counter * counter)) % this->max_size;
-            node        = this->table[value_index];
+            index = (index + step) % this->max_size;
+            node  = this->table[index];
         }
 
         // No match
@@ -130,7 +131,7 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
         // Match -> delete node
         V value = node->value;
 
-        this->table[value_index] = nullptr;
+        this->table[index] = nullptr;
         delete node;
         this->current_size--;
 
@@ -218,7 +219,7 @@ template <typename K, typename V> class qp_hash_map : virtual public map_adt<K, 
 
     /** Print information about the hash map */
     void info(stringstream &out) {
-        out << "[qp] map info:\n"
+        out << "[dh] map info:\n"
             << "max size: " << this->max_size << "\n"
             << "size: " << this->current_size << "\n"
             << "load factor: " << (double)this->current_size / this->max_size << "\n"

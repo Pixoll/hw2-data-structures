@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map_adt"
+#include "map_adt.h"
 
 #include <cstdlib>
 #include <functional>
@@ -12,23 +12,27 @@
 using namespace std;
 
 /**
- * Double Hashing Hash Map
+ * Separate Chaining Hash Map
  */
-template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, V> {
+template <typename K, typename V> class sc_hash_map : virtual public map_adt<K, V> {
   private:
     /**
      * key-value pair node
+     * Includes a pointer to the next node to act as a linked list
      */
     class hash_node {
       public:
         K key;
         V value;
+        hash_node *next;
 
-        hash_node(K key, V value) : key(key), value(value) {}
+        hash_node(K key, V value) : key(key), value(value) {
+            this->next = nullptr;
+        }
     };
 
     /** Target load factor */
-    constexpr static const double LOAD_FACTOR_THRESHOLD = 0.75;
+    constexpr static const double LOAD_FACTOR_THRESHOLD = 1.0;
 
     /** Max size of the table */
     uint32 max_size;
@@ -38,40 +42,43 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
     vector<hash_node *> table;
     /** Current size of the table */
     uint32 current_size = 0;
-    /** First hash function to calculate the initial index to insert the value at */
-    function<int(K)> hash_fn1;
-    /** Second hash function to calculate the step by which we insert the value at */
-    function<int(K)> hash_fn2;
+    /** Hash function to calculate the initial index to insert the value at */
+    function<int(K)> hash_fn;
+
+    /** Recursively frees the memory of a linked list from the tail node to the root */
+    static void destroy_list(hash_node *node) {
+        if (node->next == nullptr)
+            return;
+
+        destroy_list(node->next);
+        delete node->next;
+    }
 
   public:
-    /** Constructor that takes both hash functions as parameters */
-    dh_hash_map(uint32 initial_size, function<int(K)> hash_fn1, function<int(K)> hash_fn2)
+    /** Constructor that takes the hash function as a parameter */
+    sc_hash_map(uint32 initial_size, function<int(K)> hash_fn)
         : max_size(initial_size), size_threshold(initial_size * LOAD_FACTOR_THRESHOLD), table(initial_size, nullptr),
-          hash_fn1(hash_fn1), hash_fn2(hash_fn2) {
-        if (hash_fn1 == nullptr || hash_fn2 == nullptr) {
-            cerr << "hash_fns cannot be null." << endl;
+          hash_fn(hash_fn) {
+        if (hash_fn == nullptr) {
+            cerr << "hash_fn cannot be null." << endl;
             exit(1);
         }
     }
 
     /** Deconstructor, frees allocated memory */
-    ~dh_hash_map() {
+    ~sc_hash_map() {
         this->clear();
     }
 
     /** Get the value paired with the key */
     V get(K key) {
-        int index      = this->hash_fn1(key) % this->max_size;
-        const int step = this->hash_fn2(key);
-        uint32 counter = 0;
+        const int index = this->hash_fn(key) % this->max_size;
 
         hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
-        while (counter <= this->max_size && node != nullptr && node->key != key) {
-            counter++;
-            index = (index + step) % this->max_size;
-            node  = this->table[index];
+        while (node != nullptr && node->key != key) {
+            node = node->next;
         }
 
         return node != nullptr ? node->value : nullptr;
@@ -80,58 +87,70 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
     /** Insert a key-value pair */
     V put(K key, V value) {
         if (this->current_size >= this->size_threshold) {
-            cout << "[dh] passed load factor threshold, rehashing" << endl;
+            cout << "[sc] passed load factor threshold, rehashing" << endl;
             this->rehash(this->current_size * 2);
         }
 
-        int index      = this->hash_fn1(key) % this->max_size;
-        const int step = this->hash_fn2(key);
+        const int index = this->hash_fn(key) % this->max_size;
 
-        hash_node *cursor_node = this->table[index];
+        hash_node *destination = this->table[index];
 
-        // Stop once we find an empty node or a match
-        while (cursor_node != nullptr && cursor_node->key != key) {
-            index       = (index + step) % this->max_size;
-            cursor_node = this->table[index];
+        // Create new list if bucket is empty
+        if (destination == nullptr) {
+            this->current_size++;
+            this->table[index] = new hash_node(key, value);
+            return nullptr;
         }
 
-        // Found empty node
-        if (cursor_node == nullptr) {
-            this->table[index] = new hash_node(key, value);
+        hash_node *previous_node = nullptr;
+
+        // Stop once we get to the end of the list or find a match
+        while (destination != nullptr && destination->key != key) {
+            previous_node = destination;
+            destination   = destination->next;
+        }
+
+        // End of the list
+        if (destination == nullptr) {
             this->current_size++;
+            previous_node->next = new hash_node(key, value);
             return nullptr;
         }
 
         // Match -> override value
-        V previous_value   = cursor_node->value;
-        cursor_node->value = value;
+        V previous_value   = destination->value;
+        destination->value = value;
 
         return previous_value;
     }
 
     /** Remove a key-value pair by it's key */
     V remove(K key) {
-        int index      = this->hash_fn1(key) % this->max_size;
-        const int step = this->hash_fn2(key);
-        uint32 counter = 0;
+        const int index = this->hash_fn(key) % this->max_size;
 
-        hash_node *node = this->table[index];
+        hash_node *node     = this->table[index];
+        hash_node *previous = nullptr;
 
-        // Stop once we run through the entire table or find a match
-        while (counter <= this->max_size && (node != nullptr ? node->key != key : true)) {
-            counter++;
-            index = (index + step) % this->max_size;
-            node  = this->table[index];
+        // Stop once we run through the entire list or find a match
+        while (node != nullptr && node->key != key) {
+            previous = node;
+            node     = node->next;
         }
 
         // No match
         if (node == nullptr)
             return nullptr;
 
-        // Match -> delete node
+        // Match -> delete node from list
         V value = node->value;
 
-        this->table[index] = nullptr;
+        if (previous == nullptr) {
+            this->table[index] = node->next;
+        } else {
+            this->table[index] = previous;
+            previous->next     = node->next;
+        }
+
         delete node;
         this->current_size--;
 
@@ -155,6 +174,7 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
             if (node == nullptr)
                 continue;
 
+            destroy_list(node);
             this->table[i] = nullptr;
             delete node;
         }
@@ -184,9 +204,12 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
         this->size_threshold = new_size * LOAD_FACTOR_THRESHOLD;
 
         // Reinsert nodes
-        for (hash_node *node : nodes)
-            if (node != nullptr)
+        for (hash_node *node : nodes) {
+            while (node != nullptr) {
                 this->put(node->key, node->value);
+                node = node->next;
+            }
+        }
     }
 
     /**
@@ -196,9 +219,12 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
     vector<K> keys() {
         vector<K> result;
 
-        for (hash_node *node : this->table)
-            if (node != nullptr)
+        for (hash_node *node : this->table) {
+            while (node != nullptr) {
                 result.push_back(node->key);
+                node = node->next;
+            }
+        }
 
         return result;
     }
@@ -210,17 +236,35 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
     vector<V> values() {
         vector<V> result;
 
-        for (hash_node *node : this->table)
-            if (node != nullptr)
+        for (hash_node *node : this->table) {
+            while (node != nullptr) {
                 result.push_back(node->value);
+                node = node->next;
+            }
+        }
 
         return result;
     }
 
     /** Print information about the hash map */
     void info(stringstream &out) {
-        out << "[dh] map info:\n"
+        int max_depth = 0, filled = 0;
+
+        for (hash_node *node : this->table) {
+            int depth = 0;
+            while (node != nullptr) {
+                node = node->next;
+                depth++;
+            }
+
+            max_depth = max(max_depth, depth);
+            if (depth > 0)
+                filled++;
+        }
+
+        out << "[sc] map info:\n"
             << "max size: " << this->max_size << "\n"
+            << "max depth: " << max_depth << " in same bucket" << "\n"
             << "size: " << this->current_size << "\n"
             << "load factor: " << (double)this->current_size / this->max_size << "\n"
             << "size in memory: "
