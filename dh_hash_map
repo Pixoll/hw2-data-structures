@@ -1,0 +1,170 @@
+#pragma once
+
+#include "map_adt"
+
+#include <array>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+/**
+ * Double Hashing Hash Map
+ */
+template <typename K, typename V, int N> class dh_hash_map : virtual public map_adt<K, V> {
+  private:
+    class hash_node {
+      public:
+        K key;
+        V value;
+
+        hash_node(K key, V value) : key(key), value(value) {}
+    };
+
+    array<hash_node *, N> table;
+    uint32 current_size = 0;
+    function<int(K)> hash_fn1;
+    function<int(K)> hash_fn2;
+
+  public:
+    dh_hash_map(function<int(K)> hash_fn1, function<int(K)> hash_fn2) : hash_fn1(hash_fn1), hash_fn2(hash_fn2) {
+        if (hash_fn1 == nullptr || hash_fn2 == nullptr) {
+            cerr << "hash_fns cannot be null." << endl;
+            exit(1);
+        }
+
+        for (int i = 0; i < N; i++) {
+            this->table[i] = nullptr;
+        }
+    }
+
+    ~dh_hash_map() {
+        this->clear();
+    }
+
+    V get(K key) {
+        int index      = this->hash_fn1(key);
+        const int step = this->hash_fn2(key);
+        int counter    = 0;
+
+        hash_node *node = this->table[index];
+
+        while (counter <= N && node != nullptr && node->key != key) {
+            counter++;
+            index = (index + step) % N;
+            node  = this->table[index];
+        }
+
+        return node != nullptr ? node->value : nullptr;
+    }
+
+    V put(K key, V value) {
+        if (this->current_size == N) {
+            cerr << "[Double Hashing] Hash Map is full." << endl;
+            exit(1);
+        }
+
+        int index      = this->hash_fn1(key);
+        const int step = this->hash_fn2(key);
+
+        hash_node *cursor_node = this->table[index];
+
+        while (cursor_node != nullptr && cursor_node->key != key) {
+            index       = (index + step) % N;
+            cursor_node = this->table[index];
+        }
+
+        if (cursor_node == nullptr) {
+            this->table[index] = new hash_node(key, value);
+            this->current_size++;
+            return nullptr;
+        }
+
+        V previous_value   = cursor_node->value;
+        cursor_node->value = value;
+
+        return previous_value;
+    }
+
+    V remove(K key) {
+        int index      = this->hash_fn1(key);
+        const int step = this->hash_fn2(key);
+        int counter    = 0;
+
+        hash_node *node = this->table[index];
+
+        while (counter <= N && (node != nullptr ? node->key != key : true)) {
+            counter++;
+            index = (index + step) % N;
+            node  = this->table[index];
+        }
+
+        if (node == nullptr)
+            return nullptr;
+
+        V value = node->value;
+
+        this->table[index] = nullptr;
+        delete node;
+        this->current_size--;
+
+        return value;
+    }
+
+    uint32 size() {
+        return this->current_size;
+    }
+
+    bool empty() {
+        return this->current_size == 0;
+    }
+
+    void clear() {
+        for (int i = 0; i < N; i++) {
+            hash_node *node = this->table[i];
+            if (node == nullptr)
+                continue;
+
+            this->table[i] = nullptr;
+            delete node;
+        }
+
+        this->current_size = 0;
+    }
+
+    vector<K> keys() {
+        vector<K> result;
+
+        for (hash_node *node : this->table)
+            if (node != nullptr)
+                result.push_back(node->key);
+
+        return result;
+    }
+
+    vector<V> values() {
+        vector<V> result;
+
+        for (hash_node *node : this->table)
+            if (node != nullptr)
+                result.push_back(node->value);
+
+        return result;
+    }
+
+    void print() {
+        cout << "max size: " << N << "\n"
+             << "filled: " << (float)this->current_size / N * 100 << "%" << "\n\n";
+
+        for (hash_node *node : this->table) {
+            if (node == nullptr)
+                cout << "<empty>" << "\n";
+            else
+                cout << node->key << "\n";
+        }
+
+        cout << endl;
+    }
+};

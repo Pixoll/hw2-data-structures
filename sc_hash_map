@@ -1,0 +1,214 @@
+#pragma once
+
+#include "map_adt"
+
+#include <array>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+/**
+ * Separate Chaining Hash Map
+ */
+template <typename K, typename V, int N> class sc_hash_map : virtual public map_adt<K, V> {
+  private:
+    class hash_node {
+      public:
+        K key;
+        V value;
+        hash_node *next;
+
+        hash_node(K key, V value) : key(key), value(value) {
+            this->next = nullptr;
+        }
+    };
+
+    array<hash_node *, N> table;
+    uint32 current_size = 0;
+    function<int(K)> hash_fn;
+
+    static void destroy_list(hash_node *node) {
+        if (node->next == nullptr)
+            return;
+
+        destroy_list(node->next);
+        delete node->next;
+    }
+
+  public:
+    sc_hash_map(function<int(K)> hash_fn) : hash_fn(hash_fn) {
+        if (hash_fn == nullptr) {
+            cerr << "hash_fn cannot be null." << endl;
+            exit(1);
+        }
+
+        for (int i = 0; i < N; i++) {
+            this->table[i] = nullptr;
+        }
+    }
+
+    ~sc_hash_map() {
+        this->clear();
+    }
+
+    V get(K key) {
+        const int index = this->hash_fn(key);
+
+        hash_node *node = this->table[index];
+
+        while (node != nullptr && node->key != key) {
+            node = node->next;
+        }
+
+        return node != nullptr ? node->value : nullptr;
+    }
+
+    V put(K key, V value) {
+        const int index = this->hash_fn(key);
+
+        hash_node *destination = this->table[index];
+
+        if (destination == nullptr) {
+            this->current_size++;
+            this->table[index] = new hash_node(key, value);
+            return nullptr;
+        }
+
+        hash_node *previous_node = nullptr;
+
+        while (destination != nullptr && destination->key != key) {
+            previous_node = destination;
+            destination   = destination->next;
+        }
+
+        if (destination == nullptr) {
+            this->current_size++;
+            previous_node->next = new hash_node(key, value);
+            return nullptr;
+        }
+
+        V previous_value   = destination->value;
+        destination->value = value;
+
+        return previous_value;
+    }
+
+    V remove(K key) {
+        const int index = this->hash_fn(key);
+
+        hash_node *node     = this->table[index];
+        hash_node *previous = nullptr;
+
+        while (node != nullptr && node->key != key) {
+            previous = node;
+            node     = node->next;
+        }
+
+        if (node == nullptr)
+            return nullptr;
+
+        V value = node->value;
+
+        if (previous == nullptr) {
+            this->table[index] = node->next;
+        } else {
+            this->table[index] = previous;
+            previous->next     = node->next;
+        }
+
+        delete node;
+        this->current_size--;
+
+        return value;
+    }
+
+    uint32 size() {
+        return this->current_size;
+    }
+
+    bool empty() {
+        return this->current_size == 0;
+    }
+
+    void clear() {
+        for (int i = 0; i < N; i++) {
+            hash_node *node = this->table[i];
+            if (node == nullptr)
+                continue;
+
+            destroy_list(node);
+            this->table[i] = nullptr;
+            delete node;
+        }
+
+        this->current_size = 0;
+    }
+
+    vector<K> keys() {
+        vector<K> result;
+
+        for (hash_node *node : this->table) {
+            while (node != nullptr) {
+                result.push_back(node->key);
+                node = node->next;
+            }
+        }
+
+        return result;
+    }
+
+    vector<V> values() {
+        vector<V> result;
+
+        for (hash_node *node : this->table) {
+            while (node != nullptr) {
+                result.push_back(node->value);
+                node = node->next;
+            }
+        }
+
+        return result;
+    }
+
+    void print() {
+        int max_depth = 0, filled = 0;
+
+        for (hash_node *node : this->table) {
+            int depth = 0;
+            while (node != nullptr) {
+                node = node->next;
+                depth++;
+            }
+
+            max_depth = max(max_depth, depth);
+            if (depth > 0)
+                filled++;
+        }
+
+        cout << "max size: " << N << "\n"
+             << "max depth: " << max_depth << " in same index" << "\n"
+             << "filled: " << filled * 1e2 / N << "%" << "\n\n";
+
+        for (hash_node *node : this->table) {
+            if (node == nullptr) {
+                cout << "<empty>" << "\n";
+                continue;
+            }
+
+            cout << node->key;
+            node = node->next;
+
+            while (node != nullptr) {
+                cout << " > " << node->key;
+                node = node->next;
+            }
+
+            cout << "\n";
+        }
+
+        cout << endl;
+    }
+};

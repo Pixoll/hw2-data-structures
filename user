@@ -1,0 +1,81 @@
+#pragma once
+
+#include <cstring>
+#include <ctime>
+#include <sstream>
+#include <string>
+
+typedef unsigned int uint32;
+typedef unsigned long long uint64;
+
+using namespace std;
+
+#define USERNAME_LEN 16
+#define UNIVERSITIES_N 11
+
+string timestamp_to_string(time_t timestamp) {
+    tm *time = gmtime(&timestamp);
+    char dest[32];
+    strftime(dest, 32, "%FT%TZ", time);
+    return string(dest);
+}
+
+class User {
+  public:
+    uint64 id;
+    char username[USERNAME_LEN];
+    uint32 tweets;
+    uint32 friends;
+    uint32 followers;
+    time_t created_at;
+    char universities[UNIVERSITIES_N][USERNAME_LEN];
+
+    User(uint64 id, const char *username, uint32 tweets, uint32 friends, uint32 followers, time_t created_at)
+        : id(id), tweets(tweets), friends(friends), followers(followers), created_at(created_at) {
+        strncpy(this->username, username, USERNAME_LEN);
+        this->username[USERNAME_LEN - 1] = 0;
+
+        for (int i = 0; i < UNIVERSITIES_N; i++)
+            this->universities[i][0] = 0;
+    }
+
+    void update_stats(uint32 tweets, uint32 friends, uint32 followers) {
+        this->tweets    = tweets;
+        this->friends   = friends;
+        this->followers = followers;
+    }
+
+    void add_university(const char *university) {
+        for (int i = 0; i < UNIVERSITIES_N; i++) {
+            if (strncmp(this->universities[i], university, USERNAME_LEN) == 0)
+                return;
+
+            if (this->universities[i][0] == 0) {
+                strncpy(this->universities[i], university, USERNAME_LEN);
+                this->universities[i][USERNAME_LEN - 1] = 0;
+                return;
+            }
+        }
+    }
+
+    string to_string() const {
+        ostringstream oss;
+
+        oss << this->id << "\t";
+        oss << this->username << "\t";
+        oss << this->tweets << "\t";
+        oss << this->friends << "\t";
+        oss << this->followers << "\t";
+        oss << timestamp_to_string(this->created_at) << "\t";
+        oss << this->universities[0];
+
+        for (int i = 1; i < UNIVERSITIES_N; i++) {
+            if (this->universities[i][0] == 0)
+                break;
+
+            oss << ", " << this->universities[i];
+        }
+
+        return oss.str();
+    }
+};
