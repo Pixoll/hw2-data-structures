@@ -52,8 +52,7 @@ template <int mod> int folding_hash(uint64 id) {
 }
 
 template <int size> int username_hash(const string &username) {
-    const int length = username.length();
-    uint32 hash_val  = 0;
+    uint32 hash_val = 0;
 
     for (const char c : username)
         hash_val = 31 * hash_val + c;
@@ -62,7 +61,6 @@ template <int size> int username_hash(const string &username) {
 }
 
 template <int size> int username_double_hash(const string &username) {
-    const int length = username.length();
     int h = 0;
 
     for (const char c : username)
@@ -72,11 +70,10 @@ template <int size> int username_double_hash(const string &username) {
 }
 
 template <int size> int username_hash_2(const string &username) {
-    const int length = username.length();
-    uint32 hash      = 0;
+    uint32 hash = 0;
 
-    for (int i = 0; i < length; i++) {
-        hash += username[i];
+    for (const char c : username) {
+        hash += c;
         hash += hash << 10;
         hash ^= hash >> 6;
     }
