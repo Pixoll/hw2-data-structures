@@ -6,6 +6,9 @@
 
 using namespace std;
 
+/**
+ * Abstract data type describing the base map structure
+ */
 template <typename K, typename V> class map_adt {
   public:
     virtual V get(K key)          = 0;

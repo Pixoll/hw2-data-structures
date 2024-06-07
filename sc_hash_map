@@ -13,8 +13,12 @@ using namespace std;
 /**
  * Separate Chaining Hash Map
  */
-template <typename K, typename V, int N> class sc_hash_map : virtual public map_adt<K, V> {
+template <typename K, typename V, uint32 N> class sc_hash_map : virtual public map_adt<K, V> {
   private:
+    /**
+     * key-value pair node
+     * Includes a pointer to the next node to act as a linked list
+     */
     class hash_node {
       public:
         K key;
@@ -26,10 +30,14 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         }
     };
 
+    /** Table where all the nodes reside */
     array<hash_node *, N> table;
+    /** Current size of the table */
     uint32 current_size = 0;
+    /** Hash function to calculate the initial index to insert the value at */
     function<int(K)> hash_fn;
 
+    /** Recursively frees the memory of a linked list from the tail node to the root */
     static void destroy_list(hash_node *node) {
         if (node->next == nullptr)
             return;
@@ -39,6 +47,7 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
     }
 
   public:
+    /** Constructor that takes the hash function as a parameter */
     sc_hash_map(function<int(K)> hash_fn) : hash_fn(hash_fn) {
         if (hash_fn == nullptr) {
             cerr << "hash_fn cannot be null." << endl;
@@ -50,15 +59,18 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         }
     }
 
+    /** Deconstructor, frees allocated memory */
     ~sc_hash_map() {
         this->clear();
     }
 
+    /** Get the value paired with the key */
     V get(K key) {
         const int index = this->hash_fn(key);
 
         hash_node *node = this->table[index];
 
+        // Stop once we run through the entire table or find a match
         while (node != nullptr && node->key != key) {
             node = node->next;
         }
@@ -66,11 +78,13 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         return node != nullptr ? node->value : nullptr;
     }
 
+    /** Insert a key-value pair */
     V put(K key, V value) {
         const int index = this->hash_fn(key);
 
         hash_node *destination = this->table[index];
 
+        // Create new list if bucket is empty
         if (destination == nullptr) {
             this->current_size++;
             this->table[index] = new hash_node(key, value);
@@ -79,37 +93,44 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
 
         hash_node *previous_node = nullptr;
 
+        // Stop once we get to the end of the list or find a match
         while (destination != nullptr && destination->key != key) {
             previous_node = destination;
             destination   = destination->next;
         }
 
+        // End of the list
         if (destination == nullptr) {
             this->current_size++;
             previous_node->next = new hash_node(key, value);
             return nullptr;
         }
 
+        // Match -> override value
         V previous_value   = destination->value;
         destination->value = value;
 
         return previous_value;
     }
 
+    /** Remove a key-value pair by it's key */
     V remove(K key) {
         const int index = this->hash_fn(key);
 
         hash_node *node     = this->table[index];
         hash_node *previous = nullptr;
 
+        // Stop once we run through the entire list or find a match
         while (node != nullptr && node->key != key) {
             previous = node;
             node     = node->next;
         }
 
+        // No match
         if (node == nullptr)
             return nullptr;
 
+        // Match -> delete node from list
         V value = node->value;
 
         if (previous == nullptr) {
@@ -125,14 +146,17 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         return value;
     }
 
+    /** Get the current size of the map */
     uint32 size() {
         return this->current_size;
     }
 
+    /** Whether the map is empty */
     bool empty() {
         return this->current_size == 0;
     }
 
+    /** Clear the map - frees allocated memory */
     void clear() {
         for (int i = 0; i < N; i++) {
             hash_node *node = this->table[i];
@@ -147,6 +171,10 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         this->current_size = 0;
     }
 
+    /**
+     * Vector with all the stored keys
+     * Does not guarantee the same order as they were inserted
+     */
     vector<K> keys() {
         vector<K> result;
 
@@ -160,6 +188,10 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         return result;
     }
 
+    /**
+     * Vector with all the stored values
+     * Does not guarantee the same order as they were inserted
+     */
     vector<V> values() {
         vector<V> result;
 
@@ -173,6 +205,7 @@ template <typename K, typename V, int N> class sc_hash_map : virtual public map_
         return result;
     }
 
+    /** Print all the data contained in the map, alongside extra information */
     void print() {
         int max_depth = 0, filled = 0;
 
