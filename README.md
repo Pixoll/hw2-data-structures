@@ -4,6 +4,9 @@
 
 ### Dependencies
 
+- Python >= 3.10
+- g++ compiler compatible with C++17 standard
+
 ```
 pip install pandas matplotlib
 ```
