@@ -98,7 +98,7 @@ void run_tests(
     p.start();
     unordered_map<K, const User *, function<int(K)>> stl_map(SC_N, sc_hash_fn);
     t_c = p.end();
-    cout << "[stl] creation: " << t_c / 1e3 << " μs\n";
+    cout << "[stl] creation: " << t_c / 1e3 << " μs\n\n";
 
     stringstream timings, results;
     timings << "users,op,map,time\n";
