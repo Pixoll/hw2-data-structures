@@ -16,9 +16,14 @@
 
 using namespace std;
 
+// Sizes for all the hash maps
+// #define as they must be available for the preprocessor
+
 #define SC_N 14983 // 19891
 #define L_N 27367
 #define DH_N 27361
+
+// -- All hash functions to be tested -- //
 
 template <int mod> int mod_hash(uint64 id) {
     return id % mod;
@@ -86,11 +91,14 @@ template <int size> int username_hash_2(const string &username) {
 }
 
 int main(const int argc, const char *argv[]) {
+    // Number of tests to run (default: 100)
     const int tests = argc > 1 ? max(stoi(argv[1]), 1) : 100;
 
     const vector<const User *> users = read_csv("universities_followers.csv");
 
     filesystem::create_directory("data");
+
+    // Run all the tests
 
     run_tests<uint64, SC_N, L_N>(
         "id_mod",
