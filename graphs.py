@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
+from os import listdir, mkdir, path
 from pandas import read_csv
-import os
+from shutil import rmtree
 
 
 DATA_DIR = "data/"
@@ -10,14 +11,16 @@ TIMING_MEASURE_RANGE = 100
 
 
 def main() -> None:
-    if not os.path.exists(DATA_DIR):
+    if not path.exists(DATA_DIR):
         print("run C++ program first")
         exit(1)
 
-    if not os.path.exists(GRAPHS_DIR):
-        os.mkdir(GRAPHS_DIR)
+    if path.exists(GRAPHS_DIR):
+        rmtree(GRAPHS_DIR)
 
-    for file_name in os.listdir(DATA_DIR):
+    mkdir(GRAPHS_DIR)
+
+    for file_name in listdir(DATA_DIR):
         csv = read_csv(DATA_DIR + file_name, delimiter=",", index_col=0)
         dataset = file_name.replace(".csv", "")
 
