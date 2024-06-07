@@ -19,8 +19,10 @@
 
 using namespace std;
 
+/** Range by which to take timing measures */
 const int TIMING_MEASURE_RANGE = 100;
 
+/** Struct containing measurements for all hash maps */
 typedef struct measurement {
     uint64 sc  = 0;
     uint64 lp  = 0;
@@ -29,6 +31,10 @@ typedef struct measurement {
     uint64 stl = 0;
 } measurement;
 
+/**
+ * Run N amount of tests on all hash maps
+ * Measurement results are saved in a file prefixed by `file_name_prefix`
+ */
 template <typename K, int SC_N, int L_N>
 void run_tests(
     string file_name_prefix,
@@ -39,6 +45,7 @@ void run_tests(
     function<int(const K &)> l_hash_fn,
     function<int(const K &)> dh_hash_fn
 ) {
+    // Print time at which the test was started
     time_t now = time(nullptr);
     char time_string[20];
     strftime(time_string, 20, "%F %T", localtime(&now));
@@ -49,6 +56,7 @@ void run_tests(
     const int users_size    = users.size();
     const int ranges_amount = ceilf((float)users_size / TIMING_MEASURE_RANGE);
 
+    // Prepare the test
     sc_hash_map<K, const User *, SC_N> sc_map(sc_hash_fn);
     lp_hash_map<K, const User *, L_N> lp_map(l_hash_fn);
     qp_hash_map<K, const User *, L_N> qp_map(l_hash_fn);
@@ -62,8 +70,10 @@ void run_tests(
     performance p, total;
     total.start();
 
+    // Run N tests
     for (int n_test = 0; n_test < tests; n_test++) {
         int start_range = 0;
+        // map.put(k, v) tests
         for (int _ = 0; _ < ranges_amount; _++) {
             const int end_range = min(start_range + TIMING_MEASURE_RANGE, users_size);
 
@@ -103,6 +113,7 @@ void run_tests(
         }
 
         if (n_test == 0) {
+            // Record sizes to print load factors at the end
             sizes = {
                 sc_map.size(),
                 lp_map.size(),
@@ -113,6 +124,7 @@ void run_tests(
         }
 
         start_range = 0;
+        // map.get(k) tests
         for (int _ = 0; _ < ranges_amount; _++) {
             const int end_range = min(start_range + TIMING_MEASURE_RANGE, users_size);
 
@@ -169,6 +181,7 @@ void run_tests(
         }
 
         start_range = 0;
+        // map.remove(k) tests
         for (int _ = 0; _ < ranges_amount; _++) {
             const int end_range = min(start_range + TIMING_MEASURE_RANGE, users_size);
 
@@ -241,6 +254,7 @@ void run_tests(
     cout << "total time: " << total.end<performance::milliseconds>() / 1e3 << " s\n"
          << "saving timing data...\n";
 
+    // Save measurements data
     ofstream timings_file("data/" + file_name_prefix + ".csv");
     timings_file << timings.rdbuf();
     timings_file.close();

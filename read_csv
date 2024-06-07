@@ -19,6 +19,7 @@ using namespace std;
 
 typedef unordered_map<uint64, User *> user_map;
 
+/** Parse timestamp string into a time_t (int64) */
 time_t string_to_time(const string &field) {
     istringstream input(field);
     tm result;
@@ -26,10 +27,12 @@ time_t string_to_time(const string &field) {
     return timegm(&result);
 }
 
+/** Read the entire CSV file */
 vector<const User *> read_csv(const char *file_name) {
     cout << "reading .csv" << endl;
 
     ifstream csv(file_name);
+    // Store all users in a hash map for ~O(1) lookup
     user_map users;
     string row;
 
@@ -42,6 +45,7 @@ vector<const User *> read_csv(const char *file_name) {
         if (!csv.good())
             break;
 
+        // Separate columns into an array of strings
         string fields[7];
         int i = 0;
 
@@ -52,6 +56,7 @@ vector<const User *> read_csv(const char *file_name) {
             }
         }
 
+        // Parse each value when adequate
         const uint64 id        = stold(fields[1]);
         const uint32 tweets    = stoul(fields[3]);
         const uint32 friends   = stoul(fields[4]);
@@ -59,11 +64,13 @@ vector<const User *> read_csv(const char *file_name) {
 
         User *existent = users[id];
         if (existent != nullptr) {
+            // Update stats and add university if one already exists
             existent->update_stats(tweets, friends, followers);
             existent->add_university(fields[0].c_str());
             continue;
         }
 
+        // Create and insert
         User *user = new User(id, fields[2].c_str(), tweets, friends, followers, string_to_time(fields[6]));
         user->add_university(fields[0].c_str());
 
@@ -72,6 +79,7 @@ vector<const User *> read_csv(const char *file_name) {
 
     csv.close();
 
+    // Hash map -> vector
     vector<const User *> users_vector;
     for (user_map::iterator::value_type pair : users)
         users_vector.push_back(pair.second);

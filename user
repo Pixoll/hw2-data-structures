@@ -10,6 +10,7 @@ typedef unsigned long long uint64;
 
 using namespace std;
 
+/** Transform timestamp value into a human-readable string */
 string timestamp_to_string(time_t timestamp) {
     tm *time = gmtime(&timestamp);
     char dest[32];
@@ -17,20 +18,34 @@ string timestamp_to_string(time_t timestamp) {
     return string(dest);
 }
 
+/**
+ * Class representing a user from the dataset
+ */
 class User {
   private:
     static const int max_username_len = 16;
     static const int max_universities = 11;
 
   public:
+    /** The id */
     uint64 id;
+    /** The username */
     char username[max_username_len];
+    /** Tweets count */
     uint32 tweets;
+    /** Friends count */
     uint32 friends;
+    /** Followers count */
     uint32 followers;
+    /**
+     * Time the user was created at
+     * Stored as time_t (int64) to reduce the used space
+     */
     time_t created_at;
+    /** Usernames of the universities the user follows */
     char universities[max_universities][max_username_len];
 
+    /** Constructor that takes most of the key information */
     User(uint64 id, const char *username, uint32 tweets, uint32 friends, uint32 followers, time_t created_at)
         : id(id), tweets(tweets), friends(friends), followers(followers), created_at(created_at) {
         strncpy(this->username, username, max_username_len);
@@ -40,12 +55,20 @@ class User {
             this->universities[i][0] = 0;
     }
 
+    /**
+     * Assuming the provided data wasn't all collected at the exact same time,
+     * stats must be updated as the entires at the end of the file would be the newest
+     */
     void update_stats(uint32 tweets, uint32 friends, uint32 followers) {
         this->tweets    = tweets;
         this->friends   = friends;
         this->followers = followers;
     }
 
+    /**
+     * Add a university to the ones the user follows
+     * Does nothing if the university was already included (possible data duplication)
+     */
     void add_university(const char *university) {
         for (int i = 0; i < max_universities; i++) {
             if (strncmp(this->universities[i], university, max_username_len) == 0)
@@ -59,6 +82,7 @@ class User {
         }
     }
 
+    /** Builds a string with all the information of this user */
     string to_string() const {
         ostringstream oss;
 
