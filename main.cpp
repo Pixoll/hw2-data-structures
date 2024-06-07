@@ -57,6 +57,10 @@ template <int mod> int folding_hash(uint64 id) {
     return mod - (hashed % mod);
 }
 
+template <int size> int username_default_hash(const string &username) {
+    return size - (hash<string>{}(username) % size);
+}
+
 template <int size> int username_hash(const string &username) {
     uint32 hash_val = 0;
 
@@ -66,7 +70,7 @@ template <int size> int username_hash(const string &username) {
     return size - (hash_val % size);
 }
 
-template <int size> int username_double_hash(const string &username) {
+template <int size> int username_seeded_hash(const string &username) {
     int h = 0;
 
     for (const char c : username)
@@ -108,7 +112,7 @@ int main(const int argc, const char *argv[]) {
         [](const User *user) { return user->id; },
         mod_hash<SC_N>,
         mod_hash<L_N>,
-        [](uint64 id) { return DH_N - (id % DH_N); }
+        mod_hash<DH_N>
     );
 
     run_tests<uint64, SC_N, L_N>(
@@ -118,7 +122,7 @@ int main(const int argc, const char *argv[]) {
         [](const User *user) { return user->id; },
         folding_hash<SC_N>,
         folding_hash<L_N>,
-        [](uint64 id) { return DH_N - (id % DH_N); }
+        mod_hash<DH_N>
     );
 
     run_tests<string, SC_N, L_N>(
@@ -128,7 +132,7 @@ int main(const int argc, const char *argv[]) {
         [](const User *user) { return user->username; },
         username_hash<SC_N>,
         username_hash<L_N>,
-        username_double_hash<L_N>
+        username_default_hash<DH_N>
     );
 
     run_tests<string, SC_N, L_N>(
@@ -138,7 +142,17 @@ int main(const int argc, const char *argv[]) {
         [](const User *user) { return user->username; },
         username_hash_2<SC_N>,
         username_hash_2<L_N>,
-        username_double_hash<L_N>
+        username_default_hash<DH_N>
+    );
+
+    run_tests<string, SC_N, L_N>(
+        "username_seeded", //
+        tests,
+        users,
+        [](const User *user) { return user->username; },
+        username_seeded_hash<SC_N>,
+        username_seeded_hash<L_N>,
+        username_default_hash<DH_N>
     );
 
     return 0;
