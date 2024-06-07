@@ -61,11 +61,20 @@ template <int size> int username_default_hash(const string &username) {
     return size - (hash<string>{}(username) % size);
 }
 
-template <int size> int username_hash(const string &username) {
+template <int size> int username_djb2_hash(const string &username) {
     uint32 hash_val = 0;
 
     for (const char c : username)
-        hash_val = 31 * hash_val + c;
+        hash_val = ((hash_val << 5) + hash_val) + c;
+
+    return size - (hash_val % size);
+}
+
+template <int size> int username_sdbm_hash(const string &username) {
+    uint32 hash_val = 0;
+
+    for (const char c : username)
+        hash_val = c + (hash_val << 6) + (hash_val << 16) - hash_val;
 
     return size - (hash_val % size);
 }
@@ -79,7 +88,7 @@ template <int size> int username_seeded_hash(const string &username) {
     return size - h;
 }
 
-template <int size> int username_hash_2(const string &username) {
+template <int size> int username_shifting_hash(const string &username) {
     uint32 hash = 0;
 
     for (const char c : username) {
@@ -113,7 +122,7 @@ int main(const int argc, const char *argv[]) {
     t.start();
 
     run_tests<uint64, SC_N, L_N>(
-        "id_mod",
+        "id_mod", //
         tests,
         users,
         [](const User *user) { return user->id; },
@@ -123,7 +132,7 @@ int main(const int argc, const char *argv[]) {
     );
 
     run_tests<uint64, SC_N, L_N>(
-        "id_folding",
+        "id_folding", //
         tests,
         users,
         [](const User *user) { return user->id; },
@@ -133,22 +142,32 @@ int main(const int argc, const char *argv[]) {
     );
 
     run_tests<string, SC_N, L_N>(
-        "username_1", //
+        "username_djb2", //
         tests,
         users,
         [](const User *user) { return user->username; },
-        username_hash<SC_N>,
-        username_hash<L_N>,
+        username_djb2_hash<SC_N>,
+        username_djb2_hash<L_N>,
         username_default_hash<DH_N>
     );
 
     run_tests<string, SC_N, L_N>(
-        "username_2", //
+        "username_sdbm", //
         tests,
         users,
         [](const User *user) { return user->username; },
-        username_hash_2<SC_N>,
-        username_hash_2<L_N>,
+        username_sdbm_hash<SC_N>,
+        username_sdbm_hash<L_N>,
+        username_default_hash<DH_N>
+    );
+
+    run_tests<string, SC_N, L_N>(
+        "username_shifting", //
+        tests,
+        users,
+        [](const User *user) { return user->username; },
+        username_shifting_hash<SC_N>,
+        username_shifting_hash<L_N>,
         username_default_hash<DH_N>
     );
 
