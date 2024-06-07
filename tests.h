@@ -12,6 +12,7 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -30,6 +31,19 @@ typedef struct measurement {
     uint64 dh  = 0;
     uint64 stl = 0;
 } measurement;
+
+template <typename K> void stl_map_info(stringstream &out, unordered_map<K, const User *, function<int(K)>> &map) {
+    out << "[stl] map info:\n"
+        << "max size: " << (uint64)map.bucket_count() << "\n"
+        << "size: " << (uint64)map.size() << "\n"
+        << "load factor: " << map.load_factor() << "\n"
+        << "size in memory: "
+        << (uint64)(sizeof(map)
+                    + map.size()
+                          * (sizeof(list<pair<const K, const User *>>) + sizeof(pair<const K, const User *>) + sizeof(User)))
+        << " B\n"
+        << endl;
+}
 
 /**
  * Run N amount of tests on all hash maps
@@ -69,7 +83,6 @@ void run_tests(
     timings << "users,op,map,time\n";
 
     measurement times;
-    double stl_load_factor = 0;
     performance p, total;
     total.start();
 
@@ -117,12 +130,11 @@ void run_tests(
 
         if (n_test == 0) {
             // Record maps information to print at the end
-            stl_load_factor = stl_map.load_factor();
-
             sc_map.info(results);
             lp_map.info(results);
             qp_map.info(results);
             dh_map.info(results);
+            stl_map_info(results, stl_map);
         }
 
         start_range = 0;
@@ -302,7 +314,5 @@ void run_tests(
     timings_file.close();
     timings.clear();
 
-    cout << "saved\n\n"
-         << results.rdbuf() //
-         << "stl load factor: " << stl_load_factor << endl;
+    cout << "saved\n\n" << results.rdbuf() << endl;
 }
