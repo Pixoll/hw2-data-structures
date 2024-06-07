@@ -25,11 +25,19 @@ def main() -> None:
             data = csv[csv["op"] == subset].drop(columns=["op"], inplace=False)
 
             average_times = data.groupby(["map", "users"]).mean()
-            average_times["time"] = average_times["time"].map(lambda x : x / TIMING_MEASURE_RANGE)
-            average_times = average_times.reset_index().pivot(index="users", columns="map", values="time").iloc[:-1 , :]
+            average_times["time"] = average_times["time"].map(
+                lambda x: x / TIMING_MEASURE_RANGE
+            )
+            average_times = (
+                average_times.reset_index()
+                .pivot(index="users", columns="map", values="time")
+                .iloc[:-1, :]
+            )
             average_times = average_times[["sc", "lp", "qp", "dh", "stl"]]
 
-            shared_title = "of map." + subset + ' for "' + dataset.replace("_", " ") + '"'
+            shared_title = (
+                "of map." + subset + ' for "' + dataset.replace("_", " ") + '"'
+            )
 
             average_times.plot(title="Average time " + shared_title, lw=0.75)
             plt.grid(axis="y")
