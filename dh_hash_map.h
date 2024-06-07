@@ -226,8 +226,7 @@ template <typename K, typename V> class dh_hash_map : virtual public map_adt<K, 
             << "size in memory: "
             << sizeof(*this)
                    + this->current_size
-                         * (sizeof(hash_node *) + sizeof(hash_node) + sizeof(K) + sizeof(V)
-                            + (is_pointer<V>::value ? sizeof(*(V){nullptr}) : 0))
+                         * (sizeof(hash_node *) + sizeof(hash_node) + (is_pointer<V>::value ? sizeof(*(V){nullptr}) : 0))
             << " B\n"
             << endl;
     }
