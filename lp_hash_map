@@ -2,7 +2,6 @@
 
 #include "map_adt"
 
-#include <array>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -13,7 +12,7 @@ using namespace std;
 /**
  * Linear Probing Hash Map
  */
-template <typename K, typename V, uint32 N> class lp_hash_map : virtual public map_adt<K, V> {
+template <typename K, typename V> class lp_hash_map : virtual public map_adt<K, V> {
   private:
     /**
      * key-value pair node
@@ -26,8 +25,15 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
         hash_node(K key, V value) : key(key), value(value) {}
     };
 
+    /** Target load factor */
+    constexpr static const double LOAD_FACTOR_THRESHOLD = 0.75;
+
+    /** Max size of the table */
+    uint32 max_size;
+    /** Size threshold at which the table should be rehashed */
+    uint32 size_threshold;
     /** Table where all the nodes reside */
-    array<hash_node *, N> table;
+    vector<hash_node *> table;
     /** Current size of the table */
     uint32 current_size = 0;
     /** Hash function to calculate the initial index to insert the value at */
@@ -35,15 +41,12 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
   public:
     /** Constructor that takes the hash function as a parameter */
-    lp_hash_map(function<int(K)> hash_fn) : hash_fn(hash_fn) {
+    lp_hash_map(uint32 initial_size, function<int(K)> hash_fn)
+        : max_size(initial_size), size_threshold(initial_size * LOAD_FACTOR_THRESHOLD), table(initial_size, nullptr),
+          hash_fn(hash_fn) {
         if (hash_fn == nullptr) {
             cerr << "hash_fn cannot be null." << endl;
             exit(1);
-        }
-
-        /** We use nullptr to mark a node as empty */
-        for (uint32 i = 0; i < N; i++) {
-            this->table[i] = nullptr;
         }
     }
 
@@ -60,9 +63,9 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
         hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
-        while (counter <= N && node != nullptr && node->key != key) {
+        while (counter <= this->max_size && node != nullptr && node->key != key) {
             counter++;
-            index = (index + 1) % N;
+            index = (index + 1) % this->max_size;
             node  = this->table[index];
         }
 
@@ -71,9 +74,9 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Insert a key-value pair */
     V put(K key, V value) {
-        if (this->current_size == N) {
-            cerr << "[Linear Probing] Hash Map is full." << endl;
-            exit(1);
+        if (this->current_size >= this->size_threshold) {
+            cout << "[lp] passed load factor threshold, rehashing" << endl;
+            this->rehash(this->current_size * 2);
         }
 
         int index = this->hash_fn(key);
@@ -82,7 +85,7 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
         // Stop once we find an empty node or a match
         while (node != nullptr && node->key != key) {
-            index = (index + 1) % N;
+            index = (index + 1) % this->max_size;
             node  = this->table[index];
         }
 
@@ -108,9 +111,9 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
         hash_node *node = this->table[index];
 
         // Stop once we run through the entire table or find a match
-        while (counter <= N && (node != nullptr ? node->key != key : true)) {
+        while (counter <= this->max_size && (node != nullptr ? node->key != key : true)) {
             counter++;
-            index = (index + 1) % N;
+            index = (index + 1) % this->max_size;
             node  = this->table[index];
         }
 
@@ -140,7 +143,7 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Clear the map - frees allocated memory */
     void clear() {
-        for (uint32 i = 0; i < N; i++) {
+        for (uint32 i = 0; i < this->max_size; i++) {
             hash_node *node = this->table[i];
             if (node == nullptr)
                 continue;
@@ -150,6 +153,33 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
         }
 
         this->current_size = 0;
+    }
+
+    /**
+     * Rehash table for new target size
+     * If the size isn't a prime, the next prime is selected
+     * Very costly operation, can be avoided by choosing an appropriate initial size
+     * Can also end up being recursive if there's integer overflow
+     */
+    void rehash(uint32 size) {
+        // Move, don't copy
+        vector<hash_node *> nodes = move(this->table);
+
+        for (uint32 i = 0; i < this->max_size; i++) {
+            this->table[i] = nullptr;
+        }
+
+        // Calculate new size and apply
+        const uint32 new_size = find_next_prime(size);
+        this->table.resize(new_size);
+        this->current_size   = 0;
+        this->max_size       = new_size;
+        this->size_threshold = new_size * LOAD_FACTOR_THRESHOLD;
+
+        // Reinsert nodes
+        for (hash_node *node : nodes)
+            if (node != nullptr)
+                this->put(node->key, node->value);
     }
 
     /**
@@ -182,8 +212,8 @@ template <typename K, typename V, uint32 N> class lp_hash_map : virtual public m
 
     /** Print all the data contained in the map, alongside extra information */
     void print() {
-        cout << "max size: " << N << "\n"
-             << "filled: " << (float)this->current_size / N * 100 << "%" << "\n\n";
+        cout << "max size: " << this->max_size << "\n"
+             << "filled: " << (float)this->current_size / this->max_size * 100 << "%" << "\n\n";
 
         for (hash_node *node : this->table) {
             if (node == nullptr)

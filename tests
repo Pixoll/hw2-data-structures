@@ -57,10 +57,10 @@ void run_tests(
     const int ranges_amount = ceilf((float)users_size / TIMING_MEASURE_RANGE);
 
     // Prepare the test
-    sc_hash_map<K, const User *, SC_N> sc_map(sc_hash_fn);
-    lp_hash_map<K, const User *, L_N> lp_map(l_hash_fn);
-    qp_hash_map<K, const User *, L_N> qp_map(l_hash_fn);
-    dh_hash_map<K, const User *, L_N> dh_map(l_hash_fn, dh_hash_fn);
+    sc_hash_map<K, const User *> sc_map(SC_N, sc_hash_fn);
+    lp_hash_map<K, const User *> lp_map(L_N, l_hash_fn);
+    qp_hash_map<K, const User *> qp_map(L_N, l_hash_fn);
+    dh_hash_map<K, const User *> dh_map(L_N, l_hash_fn, dh_hash_fn);
     unordered_map<K, const User *, function<int(K)>> stl_map(SC_N, sc_hash_fn);
 
     stringstream timings;
