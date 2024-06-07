@@ -68,7 +68,7 @@ void run_tests(
     stringstream timings, results;
     timings << "users,op,map,time\n";
 
-    measurement t_put, t_get, t_remove;
+    measurement times;
     double stl_load_factor = 0;
     performance p, total;
     total.start();
@@ -86,33 +86,33 @@ void run_tests(
 
                 p.start();
                 sc_map.put(key, user);
-                t_put.sc += p.end();
+                times.sc += p.end();
 
                 p.start();
                 lp_map.put(key, user);
-                t_put.lp += p.end();
+                times.lp += p.end();
 
                 p.start();
                 qp_map.put(key, user);
-                t_put.qp += p.end();
+                times.qp += p.end();
 
                 p.start();
                 dh_map.put(key, user);
-                t_put.dh += p.end();
+                times.dh += p.end();
 
                 p.start();
                 stl_map[key] = user;
-                t_put.stl += p.end();
+                times.stl += p.end();
             }
 
-            timings << end_range << ",put,sc," << t_put.sc << "\n"
-                    << end_range << ",put,lp," << t_put.lp << "\n"
-                    << end_range << ",put,qp," << t_put.qp << "\n"
-                    << end_range << ",put,dh," << t_put.dh << "\n"
-                    << end_range << ",put,stl," << t_put.stl << "\n";
+            timings << end_range << ",put,sc," << times.sc << "\n"
+                    << end_range << ",put,lp," << times.lp << "\n"
+                    << end_range << ",put,qp," << times.qp << "\n"
+                    << end_range << ",put,dh," << times.dh << "\n"
+                    << end_range << ",put,stl," << times.stl << "\n";
 
             start_range = end_range;
-            t_put       = {0, 0, 0, 0, 0};
+            times       = {0, 0, 0, 0, 0};
         }
 
         if (n_test == 0) {
@@ -126,7 +126,7 @@ void run_tests(
         }
 
         start_range = 0;
-        // map.get(k) tests
+        // map.get(k) (hit) tests
         for (int _ = 0; _ < ranges_amount; _++) {
             const int end_range = min(start_range + TIMING_MEASURE_RANGE, users_size);
 
@@ -136,23 +136,23 @@ void run_tests(
 
                 p.start();
                 sc_map.get(key);
-                t_get.sc += p.end();
+                times.sc += p.end();
 
                 p.start();
                 lp_map.get(key);
-                t_get.lp += p.end();
+                times.lp += p.end();
 
                 p.start();
                 qp_map.get(key);
-                t_get.qp += p.end();
+                times.qp += p.end();
 
                 p.start();
                 dh_map.get(key);
-                t_get.dh += p.end();
+                times.dh += p.end();
 
                 p.start();
                 stl_map[key];
-                t_get.stl += p.end();
+                times.stl += p.end();
 
                 /*
                 if (sc_f == nullptr || lp_f == nullptr || qp_f == nullptr || dh_f == nullptr) {
@@ -172,14 +172,14 @@ void run_tests(
                 */
             }
 
-            timings << end_range << ",get,sc," << t_get.sc << "\n"
-                    << end_range << ",get,lp," << t_get.lp << "\n"
-                    << end_range << ",get,qp," << t_get.qp << "\n"
-                    << end_range << ",get,dh," << t_get.dh << "\n"
-                    << end_range << ",get,stl," << t_get.stl << "\n";
+            timings << end_range << ",get_(hit),sc," << times.sc << "\n"
+                    << end_range << ",get_(hit),lp," << times.lp << "\n"
+                    << end_range << ",get_(hit),qp," << times.qp << "\n"
+                    << end_range << ",get_(hit),dh," << times.dh << "\n"
+                    << end_range << ",get_(hit),stl," << times.stl << "\n";
 
             start_range = end_range;
-            t_get       = {0, 0, 0, 0, 0};
+            times       = {0, 0, 0, 0, 0};
         }
 
         start_range = 0;
@@ -193,23 +193,23 @@ void run_tests(
 
                 p.start();
                 sc_map.remove(key);
-                t_remove.sc += p.end();
+                times.sc += p.end();
 
                 p.start();
                 lp_map.remove(key);
-                t_remove.lp += p.end();
+                times.lp += p.end();
 
                 p.start();
                 qp_map.remove(key);
-                t_remove.qp += p.end();
+                times.qp += p.end();
 
                 p.start();
                 dh_map.remove(key);
-                t_remove.dh += p.end();
+                times.dh += p.end();
 
                 p.start();
                 stl_map.erase(key);
-                t_remove.stl += p.end();
+                times.stl += p.end();
 
                 /*
                 if (sc_f == nullptr || lp_f == nullptr || qp_f == nullptr || dh_f == nullptr) {
@@ -229,14 +229,14 @@ void run_tests(
                 */
             }
 
-            timings << end_range << ",remove,sc," << t_remove.sc << "\n"
-                    << end_range << ",remove,lp," << t_remove.lp << "\n"
-                    << end_range << ",remove,qp," << t_remove.qp << "\n"
-                    << end_range << ",remove,dh," << t_remove.dh << "\n"
-                    << end_range << ",remove,stl," << t_remove.stl << "\n";
+            timings << end_range << ",remove,sc," << times.sc << "\n"
+                    << end_range << ",remove,lp," << times.lp << "\n"
+                    << end_range << ",remove,qp," << times.qp << "\n"
+                    << end_range << ",remove,dh," << times.dh << "\n"
+                    << end_range << ",remove,stl," << times.stl << "\n";
 
             start_range = end_range;
-            t_remove    = {0, 0, 0, 0, 0};
+            times       = {0, 0, 0, 0, 0};
         }
 
         /*
@@ -251,6 +251,46 @@ void run_tests(
             exit(1);
         }
         */
+
+        start_range = 0;
+        // map.get(k) (miss) tests
+        for (int _ = 0; _ < ranges_amount; _++) {
+            const int end_range = min(start_range + TIMING_MEASURE_RANGE, users_size);
+
+            for (int i = start_range; i < end_range; i++) {
+                const User *user = users[i];
+                const K key      = get_key_fn(user);
+
+                p.start();
+                sc_map.get(key);
+                times.sc += p.end();
+
+                p.start();
+                lp_map.get(key);
+                times.lp += p.end();
+
+                p.start();
+                qp_map.get(key);
+                times.qp += p.end();
+
+                p.start();
+                dh_map.get(key);
+                times.dh += p.end();
+
+                p.start();
+                stl_map[key];
+                times.stl += p.end();
+            }
+
+            timings << end_range << ",get_(miss),sc," << times.sc << "\n"
+                    << end_range << ",get_(miss),lp," << times.lp << "\n"
+                    << end_range << ",get_(miss),qp," << times.qp << "\n"
+                    << end_range << ",get_(miss),dh," << times.dh << "\n"
+                    << end_range << ",get_(miss),stl," << times.stl << "\n";
+
+            start_range = end_range;
+            times       = {0, 0, 0, 0, 0};
+        }
     }
 
     cout << "total time: " << total.end<performance::milliseconds>() / 1e3 << " s\n"

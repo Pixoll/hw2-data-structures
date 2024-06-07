@@ -6,7 +6,7 @@ from shutil import rmtree
 
 DATA_DIR = "data/"
 GRAPHS_DIR = "graphs/"
-SUBSETS = ("put", "get", "remove")
+SUBSETS = ("put", "get_(hit)", "get_(miss)", "remove")
 TIMING_MEASURE_RANGE = 100
 
 
@@ -39,20 +39,26 @@ def main() -> None:
             average_times = average_times[["sc", "lp", "qp", "dh", "stl"]]
 
             shared_title = (
-                "of map." + subset + ' for "' + dataset.replace("_", " ") + '"'
+                "of map."
+                + subset.replace("_", " ")
+                + ' for "'
+                + dataset.replace("_", " ")
+                + '"'
             )
+
+            subset_no_paren = subset.replace("(", "").replace(")", "")
 
             average_times.plot(title="Average time " + shared_title, lw=0.75)
             plt.grid(axis="y")
             plt.ylabel("nanoseconds per op.")
-            plt.savefig(GRAPHS_DIR + dataset + "_" + subset + ".png", dpi=300)
+            plt.savefig(GRAPHS_DIR + dataset + "_" + subset_no_paren + ".png", dpi=300)
             plt.close()
 
             average_times.mean().plot(kind="bar", title="Average time " + shared_title)
             plt.grid(axis="y")
             plt.ylabel("nanoseconds")
             plt.xticks(rotation="horizontal")
-            plt.savefig(GRAPHS_DIR + dataset + "_" + subset + "_bar.png", dpi=300)
+            plt.savefig(GRAPHS_DIR + dataset + "_" + subset_no_paren + "_bar.png", dpi=300)
             plt.close()
 
             print("saved", dataset, subset, "graphs")
