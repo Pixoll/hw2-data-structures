@@ -19,7 +19,7 @@ using namespace std;
 // Sizes for all the hash maps
 // #define as they must be available for the preprocessor
 
-#define SC_N 14983 // 19891
+#define SC_N 19913 // 14983
 #define L_N 27367
 #define DH_N 27361
 
