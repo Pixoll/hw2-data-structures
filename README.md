@@ -1,4 +1,4 @@
-# C++ Homework 1 - Data Structures class
+# C++ Homework 2 - Data Structures class
 
 `universities_followers.csv` provided by the professor.
 
